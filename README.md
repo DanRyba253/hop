@@ -56,7 +56,7 @@ SPECIAL USAGE
 
 ## Building from source
 > [!NOTE]
-> zig version 0.15.2 is required.
+> Zig version 0.15.2 is required.
 ```bash
 git clone https://github.com/DanRyba253/hop.git
 cd  hop
