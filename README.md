@@ -27,7 +27,7 @@ OPTIONS
   -r, --realpath
       When using 'ls', print full paths instead of relative to backup directory
   -s, --simple
-      When using 'ls', just print file names
+      When using 'ls', only print file paths
   -n, --no-color
       When using 'ls', don't color text
   -h, --help
