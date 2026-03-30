@@ -8,7 +8,7 @@ pub fn run(arena: Allocator, args: Args, env: Env) !void {
     _ = arena;
     for (env.paths) |path| {
         const path_dir = std.fs.path.dirname(path) orelse ".";
-        env.backup.makePath(std.fs.path.dirname(path) orelse ".") catch {
+        env.backup.makePath(path_dir) catch {
             if (!args.quiet) {
                 std.log.err("failed to create path: {s}/{s}", .{ env.backup_path, path_dir });
             }
