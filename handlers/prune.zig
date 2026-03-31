@@ -4,7 +4,7 @@ const Env = @import("../Env.zig");
 const Walker = @import("../Walker.zig");
 const Allocator = std.mem.Allocator;
 
-pub fn run(arena: Allocator, args: Arg, env: Env) !void {
+pub fn run(arena: Allocator, args: Arg, env: *Env) !void {
     var walker: Walker = try .walk(arena, env);
     defer walker.deinit();
 

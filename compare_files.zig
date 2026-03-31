@@ -2,7 +2,7 @@ const std = @import("std");
 const Env = @import("Env.zig");
 const builtin = @import("builtin");
 
-pub fn compare(env: Env, file_path: []const u8) Error!bool {
+pub fn compare(env: *Env, file_path: []const u8) Error!bool {
     const backup_file = env.backup.openFile(file_path, .{}) catch {
         return error.FailedToAccessBackupFile;
     };

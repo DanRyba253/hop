@@ -27,10 +27,9 @@ stdout: *std.Io.Writer = undefined,
 pub fn build(
     arena: Allocator,
     args: Args,
+    env: *@This(),
     errHandler: fn (args: Args, err: Error) error{StoppedByErrHandler}!void,
-) (error{StoppedByErrHandler} || Allocator.Error)!@This() {
-    var env: @This() = .{};
-
+) (error{StoppedByErrHandler} || Allocator.Error)!void {
     env.home_path = getEnvVarOwned(arena, "HOME") catch |err| switch (err) {
         error.OutOfMemory => |e| return e,
         else => {
@@ -136,8 +135,6 @@ pub fn build(
 
     env.stdout_writer = std.fs.File.stdout().writer(&env.stdout_buf);
     env.stdout = &env.stdout_writer.interface;
-
-    return env;
 }
 
 pub fn closeDirs(self: *@This()) void {

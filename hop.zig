@@ -68,17 +68,17 @@ pub fn main() !void {
         return;
     }
 
-    var env: Env = try .build(gpa, args, Env.defaultErrorHandler);
-    defer env.closeDirs();
+    var env: Env = .{};
+    try Env.build(gpa, args, &env, Env.defaultErrorHandler);
 
     if (builtin.mode == .Debug) try env.printDebug(gpa);
 
     switch (args.command.?) {
-        .dir => try @import("handlers/dir.zig").run(gpa, args, env),
-        .ls => try @import("handlers/ls.zig").run(gpa, args, env),
-        .add => try @import("handlers/add.zig").run(gpa, args, env),
-        .sync => try @import("handlers/sync.zig").run(gpa, args, env),
-        .install => try @import("handlers/install.zig").run(gpa, args, env),
-        .prune => try @import("handlers/prune.zig").run(gpa, args, env),
+        .dir => try @import("handlers/dir.zig").run(gpa, args, &env),
+        .ls => try @import("handlers/ls.zig").run(gpa, args, &env),
+        .add => try @import("handlers/add.zig").run(gpa, args, &env),
+        .sync => try @import("handlers/sync.zig").run(gpa, args, &env),
+        .install => try @import("handlers/install.zig").run(gpa, args, &env),
+        .prune => try @import("handlers/prune.zig").run(gpa, args, &env),
     }
 }

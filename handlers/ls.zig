@@ -11,7 +11,7 @@ const red = "\x1b[31m";
 const bold = "\x1b[1m";
 const reset = "\x1b[0m";
 
-pub fn run(arena: Allocator, args: Args, env: Env) !void {
+pub fn run(arena: Allocator, args: Args, env: *Env) !void {
     var walker: Walker = try .walk(arena, env);
     defer walker.deinit();
 

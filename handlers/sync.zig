@@ -5,7 +5,7 @@ const compare_files = @import("../compare_files.zig");
 const Walker = @import("../Walker.zig");
 const Allocator = std.mem.Allocator;
 
-pub fn run(arena: Allocator, args: Args, env: Env) !void {
+pub fn run(arena: Allocator, args: Args, env: *Env) !void {
     var walker: Walker = try .walk(arena, env);
     defer walker.deinit();
 

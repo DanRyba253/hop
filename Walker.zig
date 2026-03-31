@@ -22,6 +22,6 @@ pub fn deinit(self: *@This()) void {
     self.walker.deinit();
 }
 
-pub fn walk(arena: Allocator, env: Env) !@This() {
+pub fn walk(arena: Allocator, env: *Env) !@This() {
     return .{ .walker = try env.backup.walk(arena) };
 }
