@@ -22,6 +22,7 @@ OPTIONS
       Don't emit information (overrides -v, --verbose)
   -f, --force
       When using 'install', don't prompt for confirmation on file overwrite
+      When using 'prune', don't prompt for confirmation
   -d, --diff
       When using 'ls', skip files that are in sync
   -r, --realpath
@@ -45,6 +46,9 @@ COMMANDS
       Print information about the backup files
   dir
       Print the backup directory
+  prune
+      Remove backup files that do not correspond to any file in $HOME
+      and any directories that become empty as a result
 SPECIAL USAGE
   hop (with no arguments)
       Equivalent to 'hop sync -v'
