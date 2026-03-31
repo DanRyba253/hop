@@ -106,7 +106,7 @@ pub fn parse(
     return parsed;
 }
 
-pub const Command = enum { add, install, ls, sync, dir };
+pub const Command = enum { add, install, ls, sync, dir, prune };
 
 pub const Error = union(enum) {
     no_value_after_backup_dir_option,
@@ -160,6 +160,7 @@ fn isKnownCommand(arg: []const u8) ?Command {
     if (eql(u8, arg, "ls")) return .ls;
     if (eql(u8, arg, "sync")) return .sync;
     if (eql(u8, arg, "dir")) return .dir;
+    if (eql(u8, arg, "prune")) return .prune;
     return null;
 }
 

@@ -33,6 +33,7 @@ pub fn main() !void {
             \\      Don't emit information (overrides -v, --verbose)
             \\  -f, --force
             \\      When using 'install', don't prompt for confirmation on file overwrite
+            \\      When using 'prune', don't prompt for confirmation
             \\  -d, --diff
             \\      When using 'ls', skip files that are in sync
             \\  -r, --realpath
@@ -56,6 +57,9 @@ pub fn main() !void {
             \\      Print information about the backup files
             \\  dir
             \\      Print the backup directory
+            \\  prune
+            \\      Remove backup files that do not correspond to any file in $HOME
+            \\      and any directories that become empty as a result
             \\SPECIAL USAGE
             \\  hop (with no arguments)
             \\      Equivalent to 'hop sync -v'
@@ -75,5 +79,6 @@ pub fn main() !void {
         .add => try @import("handlers/add.zig").run(gpa, args, env),
         .sync => try @import("handlers/sync.zig").run(gpa, args, env),
         .install => try @import("handlers/install.zig").run(gpa, args, env),
+        .prune => try @import("handlers/prune.zig").run(gpa, args, env),
     }
 }
