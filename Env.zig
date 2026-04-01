@@ -25,9 +25,9 @@ stdout_writer: std.fs.File.Writer = undefined,
 stdout: *std.Io.Writer = undefined,
 
 pub fn build(
+    env: *@This(),
     arena: Allocator,
     args: Args,
-    env: *@This(),
     errHandler: fn (args: Args, err: Error) error{StoppedByErrHandler}!void,
 ) (error{StoppedByErrHandler} || Allocator.Error)!void {
     env.home_path = getEnvVarOwned(arena, "HOME") catch |err| switch (err) {

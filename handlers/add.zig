@@ -4,8 +4,7 @@ const Env = @import("../Env.zig");
 const compare_files = @import("../compare_files.zig");
 const Allocator = std.mem.Allocator;
 
-pub fn run(arena: Allocator, args: Args, env: *Env) !void {
-    _ = arena;
+pub fn run(_: Allocator, args: Args, env: *Env) !void {
     for (env.paths) |path| {
         const path_dir = std.fs.path.dirname(path) orelse ".";
         env.backup.makePath(path_dir) catch {

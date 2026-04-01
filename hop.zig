@@ -30,7 +30,7 @@ pub fn main() !void {
             \\  -v, --verbose
             \\      Emit messages about files added, synced or installed
             \\  -q, --quiet
-            \\      Don't emit information (overrides -v, --verbose)
+            \\      Don't emit messages (overrides -v, --verbose)
             \\  -f, --force
             \\      When using 'install', don't prompt for confirmation on file overwrite
             \\      When using 'prune', don't prompt for confirmation
@@ -69,7 +69,7 @@ pub fn main() !void {
     }
 
     var env: Env = .{};
-    try Env.build(gpa, args, &env, Env.defaultErrorHandler);
+    try env.build(gpa, args, Env.defaultErrorHandler);
 
     if (builtin.mode == .Debug) try env.printDebug(gpa);
 
