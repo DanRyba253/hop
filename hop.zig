@@ -12,14 +12,12 @@ pub fn main() !void {
     const gpa = arena.allocator();
 
     const raw_args = try std.process.argsAlloc(gpa);
-    defer std.process.argsFree(gpa, raw_args);
-
     const args: Args = try .parse(gpa, raw_args[1..], Args.defaultErrorHandler);
 
     if (builtin.mode == .Debug) args.printDebug();
 
     if (args.help) {
-        std.debug.print(
+        _ = try std.fs.File.stdout().write(
             \\hop - HOme backuP
             \\USAGE
             \\  hop [options] <command> [args]
@@ -64,12 +62,13 @@ pub fn main() !void {
             \\  hop (with no arguments)
             \\      Equivalent to 'hop sync -v'
             \\
-        , .{});
+        );
         return;
     }
 
     var env: Env = .{};
     try env.build(gpa, args, Env.defaultErrorHandler);
+    defer env.closeDirs();
 
     if (builtin.mode == .Debug) try env.printDebug(gpa);
 
@@ -80,5 +79,6 @@ pub fn main() !void {
         .sync => try @import("handlers/sync.zig").run(gpa, args, &env),
         .install => try @import("handlers/install.zig").run(gpa, args, &env),
         .prune => try @import("handlers/prune.zig").run(gpa, args, &env),
+        .version => try @import("handlers/version.zig").run(gpa, args, &env),
     }
 }
