@@ -9,7 +9,7 @@ pub fn run(arena: Allocator, args: Arg, env: *Env) !void {
     defer walker.deinit();
 
     walk: while (walker.next()) |path| {
-        if (env.home.statFile(path)) |stat| {
+        if (env.home.statFile(env.io, path, .{ .follow_symlinks = false })) |stat| {
             if (stat.kind == .file) continue;
         } else |err| switch (err) {
             error.FileNotFound => {},
@@ -42,7 +42,7 @@ pub fn run(arena: Allocator, args: Arg, env: *Env) !void {
             try env.stdout.print("invalid response: {c}\n", .{response});
         }
 
-        env.backup.deleteFile(path) catch {
+        env.backup.deleteFile(env.io, path) catch {
             if (!args.quiet) {
                 std.log.err("failed to delete file: {s}/{s}", .{ env.backup_path, path });
                 continue;
@@ -59,7 +59,7 @@ pub fn run(arena: Allocator, args: Arg, env: *Env) !void {
         var sub_dir_path = path;
         while (true) {
             sub_dir_path = std.fs.path.dirname(sub_dir_path) orelse break;
-            env.backup.deleteDir(sub_dir_path) catch break;
+            env.backup.deleteDir(env.io, sub_dir_path) catch break;
         }
     }
 

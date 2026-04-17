@@ -18,7 +18,7 @@ command: ?Command = null,
 
 pub fn parse(
     arena: Allocator,
-    args: [][:0]u8,
+    args: []const [:0]const u8,
     errHandler: fn (err: Error) error{StoppedByErrHandler}!void,
 ) (error{StoppedByErrHandler} || Allocator.Error)!@This() {
     var expecting_backup_dir = false;

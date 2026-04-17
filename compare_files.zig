@@ -3,22 +3,22 @@ const Env = @import("Env.zig");
 const builtin = @import("builtin");
 
 pub fn compare(env: *Env, file_path: []const u8) Error!bool {
-    const backup_file = env.backup.openFile(file_path, .{}) catch {
+    const backup_file = env.backup.openFile(env.io, file_path, .{}) catch {
         return error.FailedToAccessBackupFile;
     };
-    defer backup_file.close();
+    defer backup_file.close(env.io);
 
-    const home_file = env.home.openFile(file_path, .{}) catch |err| switch (err) {
+    const home_file = env.home.openFile(env.io, file_path, .{}) catch |err| switch (err) {
         error.FileNotFound => return error.HomeFileNotFound,
         else => return error.FailedToAccessHomeFile,
     };
-    defer home_file.close();
+    defer home_file.close(env.io);
 
-    const home_stat = home_file.stat() catch {
+    const home_stat = home_file.stat(env.io) catch {
         return error.FailedToAccessHomeFile;
     };
 
-    const backup_stat = backup_file.stat() catch {
+    const backup_stat = backup_file.stat(env.io) catch {
         return error.FailedToAccessBackupFile;
     };
 
@@ -27,10 +27,10 @@ pub fn compare(env: *Env, file_path: []const u8) Error!bool {
     }
 
     var home_reader_buf: [1024]u8 = undefined;
-    var home_reader = home_file.reader(&home_reader_buf);
+    var home_reader = home_file.reader(env.io, &home_reader_buf);
 
     var backup_reader_buf: [1024]u8 = undefined;
-    var backup_reader = backup_file.reader(&backup_reader_buf);
+    var backup_reader = backup_file.reader(env.io, &backup_reader_buf);
 
     const buf_size = 1024;
     var home_buf: [buf_size]u8 = undefined;

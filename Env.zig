@@ -2,15 +2,14 @@ const std = @import("std");
 const Args = @import("Args.zig");
 
 const Allocator = std.mem.Allocator;
-const Dir = std.fs.Dir;
+const Dir = std.Io.Dir;
 const List = std.ArrayList;
 
-const getEnvVarOwned = std.process.getEnvVarOwned;
-const openDirAbsolute = std.fs.openDirAbsolute;
+const openDirAbsolute = std.Io.Dir.openDirAbsolute;
 const resolve = std.fs.path.resolvePosix;
 const isAbsolute = std.fs.path.isAbsolute;
 const startsWith = std.mem.startsWith;
-const cwd = std.fs.cwd();
+const cwd = std.Io.Dir.cwd();
 
 home: Dir = undefined,
 backup: Dir = undefined,
@@ -18,35 +17,37 @@ home_path: []const u8 = undefined,
 backup_path: []const u8 = undefined,
 paths: [][]const u8 = &.{},
 stdin_buf: [1024]u8 = undefined,
-stdin_reader: std.fs.File.Reader = undefined,
+stdin_reader: std.Io.File.Reader = undefined,
 stdin: *std.Io.Reader = undefined,
 stdout_buf: [1024]u8 = undefined,
-stdout_writer: std.fs.File.Writer = undefined,
+stdout_writer: std.Io.File.Writer = undefined,
 stdout: *std.Io.Writer = undefined,
+io: std.Io,
 
 pub fn build(
     env: *@This(),
+    envMap: std.process.Environ.Map,
     arena: Allocator,
     args: Args,
     errHandler: fn (args: Args, err: Error) error{StoppedByErrHandler}!void,
 ) (error{StoppedByErrHandler} || Allocator.Error)!void {
-    env.home_path = getEnvVarOwned(arena, "HOME") catch |err| switch (err) {
-        error.OutOfMemory => |e| return e,
-        else => {
-            try errHandler(args, .home_env_var_not_found);
-            @panic("Env.build: errHandler expected to error here");
-        },
+    env.home_path = envMap.get("HOME") orelse {
+        try errHandler(args, .home_env_var_not_found);
+        @panic("Env.build: errHandler expected to error here");
     };
 
-    env.home = openDirAbsolute(env.home_path, .{}) catch {
+    env.home = openDirAbsolute(env.io, env.home_path, .{}) catch {
         try errHandler(args, .failed_to_open_home_dir);
         @panic("Env.build: errHandler expected to error here");
     };
 
-    const cwd_path = cwd.realpathAlloc(arena, ".") catch {
+    var buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
+    const cwd_path_len = cwd.realPathFile(env.io, ".", &buf) catch |e| {
+        std.debug.print("{}\n", .{e});
         try errHandler(args, .failed_to_find_realpath_of_cwd);
         @panic("Env.build: errHandler expected to error here");
     };
+    const cwd_path = try arena.dupe(u8, buf[0..cwd_path_len]);
 
     resolve_backup: {
         if (args.backup_dir) |backup_dir_opt| blk: {
@@ -59,7 +60,7 @@ pub fn build(
                     backup_dir_opt,
                 });
             }
-            env.backup = openDirAbsolute(backup_path_opt, .{ .iterate = true }) catch {
+            env.backup = openDirAbsolute(env.io, backup_path_opt, .{ .iterate = true }) catch {
                 try errHandler(args, .{ .failed_to_open_backup_dir_option = backup_path_opt });
                 break :blk;
             };
@@ -68,17 +69,13 @@ pub fn build(
         }
 
         blk: {
-            const backup_path_env = getEnvVarOwned(arena, "HOP_BACKUP") catch |err| switch (err) {
-                error.OutOfMemory => |e| return e,
-                else => {
-                    break :blk;
-                },
-            };
+            const backup_path_env = envMap.get("HOP_BACKUP") orelse break :blk;
+
             if (!isAbsolute(backup_path_env)) {
                 try errHandler(args, .{ .backup_dir_env_var_is_not_absolute = backup_path_env });
                 break :blk;
             }
-            env.backup = openDirAbsolute(backup_path_env, .{ .iterate = true }) catch {
+            env.backup = openDirAbsolute(env.io, backup_path_env, .{ .iterate = true }) catch {
                 try errHandler(args, .{ .failed_to_open_backup_dir_env_var = backup_path_env });
                 break :blk;
             };
@@ -90,7 +87,7 @@ pub fn build(
             env.home_path,
             ".hop",
         });
-        env.backup = openDirAbsolute(backup_path_default, .{ .iterate = true }) catch {
+        env.backup = openDirAbsolute(env.io, backup_path_default, .{ .iterate = true }) catch {
             try errHandler(args, .{ .failed_to_open_backup_dir_default = backup_path_default });
             @panic("Env.build: errHandler expected to error here");
         };
@@ -117,7 +114,9 @@ pub fn build(
             try errHandler(args, .{ .file_in_backup_dir = file_path });
             continue;
         }
-        const stat = env.home.statFile(file_path) catch {
+        const stat = env.home.statFile(env.io, file_path, .{
+            .follow_symlinks = false,
+        }) catch {
             try errHandler(args, .{ .failed_to_stat_file = file_path });
             continue;
         };
@@ -130,16 +129,16 @@ pub fn build(
 
     env.paths = try files.toOwnedSlice(arena);
 
-    env.stdin_reader = std.fs.File.stdin().reader(&env.stdin_buf);
+    env.stdin_reader = std.Io.File.stdin().reader(env.io, &env.stdin_buf);
     env.stdin = &env.stdin_reader.interface;
 
-    env.stdout_writer = std.fs.File.stdout().writer(&env.stdout_buf);
+    env.stdout_writer = std.Io.File.stdout().writer(env.io, &env.stdout_buf);
     env.stdout = &env.stdout_writer.interface;
 }
 
 pub fn closeDirs(self: *@This()) void {
-    self.home.close();
-    self.backup.close();
+    self.home.close(self.io);
+    self.backup.close(self.io);
 }
 
 pub const Error = union(enum) {
@@ -156,9 +155,12 @@ pub const Error = union(enum) {
     file_not_a_file: []const u8,
 };
 
-pub fn printDebug(self: @This(), allocator: Allocator) !void {
-    std.debug.print("home: {s}\n", .{try self.home.realpathAlloc(allocator, ".")});
-    std.debug.print("backup: {s}\n", .{try self.backup.realpathAlloc(allocator, ".")});
+pub fn printDebug(self: @This()) !void {
+    var buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
+    const home_len = try self.home.realPathFile(self.io, ".", &buf);
+    std.debug.print("home: {s}\n", .{buf[0..home_len]});
+    const backup_len = try self.backup.realPathFile(self.io, ".", &buf);
+    std.debug.print("backup: {s}\n", .{buf[0..backup_len]});
     std.debug.print("Paths:\n", .{});
     for (self.paths) |path| {
         std.debug.print("  {s}\n", .{path});

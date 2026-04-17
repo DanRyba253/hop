@@ -7,7 +7,7 @@ const Allocator = std.mem.Allocator;
 pub fn run(_: Allocator, args: Args, env: *Env) !void {
     for (env.paths) |path| {
         const path_dir = std.fs.path.dirname(path) orelse ".";
-        env.backup.makePath(path_dir) catch {
+        env.backup.createDirPath(env.io, path_dir) catch {
             if (!args.quiet) {
                 std.log.err("failed to create path: {s}/{s}", .{ env.backup_path, path_dir });
             }
@@ -18,7 +18,7 @@ pub fn run(_: Allocator, args: Args, env: *Env) !void {
             if (ok) continue;
         } else |_| {}
 
-        env.home.copyFile(path, env.backup, path, .{}) catch {
+        env.home.copyFile(path, env.backup, path, env.io, .{}) catch {
             if (!args.quiet) {
                 std.log.err("failed to copy {s}/{s} to {s}/{s}", .{
                     env.home_path,

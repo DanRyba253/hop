@@ -6,18 +6,18 @@ const builtin = @import("builtin");
 const Arena = std.heap.ArenaAllocator;
 const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
-    var arena: Arena = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const gpa = arena.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.arena.allocator();
 
-    const raw_args = try std.process.argsAlloc(gpa);
+    const raw_args = try init.minimal.args.toSlice(gpa);
     const args: Args = try .parse(gpa, raw_args[1..], Args.defaultErrorHandler);
 
     if (builtin.mode == .Debug) args.printDebug();
 
     if (args.help) {
-        _ = try std.fs.File.stdout().write(
+        var buf: [1024]u8 = undefined;
+        var stdout = std.Io.File.stdout().writer(init.io, &buf);
+        _ = try stdout.interface.writeAll(
             \\hop - HOme backuP
             \\USAGE
             \\  hop [options] <command> [args]
@@ -63,14 +63,15 @@ pub fn main() !void {
             \\      Equivalent to 'hop sync -v'
             \\
         );
+        try stdout.interface.flush();
         return;
     }
 
-    var env: Env = .{};
-    try env.build(gpa, args, Env.defaultErrorHandler);
+    var env: Env = .{ .io = init.io };
+    try env.build(init.environ_map.*, gpa, args, Env.defaultErrorHandler);
     defer env.closeDirs();
 
-    if (builtin.mode == .Debug) try env.printDebug(gpa);
+    if (builtin.mode == .Debug) try env.printDebug();
 
     switch (args.command.?) {
         .dir => try @import("handlers/dir.zig").run(gpa, args, &env),

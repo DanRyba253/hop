@@ -16,7 +16,7 @@ pub fn run(arena: Allocator, args: Args, env: *Env) !void {
             }
         } else |_| {}
 
-        env.home.copyFile(path, env.backup, path, .{}) catch {
+        env.home.copyFile(path, env.backup, path, env.io, .{}) catch {
             if (!args.quiet) {
                 std.log.err("failed to copy {s}/{s} to {s}/{s}", .{
                     env.home_path,

@@ -40,7 +40,7 @@ pub fn run(arena: Allocator, args: Args, env: *Env) !void {
             try env.stdout.print("invalid response: {c}\n", .{response});
         }
 
-        env.backup.copyFile(path, env.home, path, .{}) catch {
+        env.backup.copyFile(path, env.home, path, env.io, .{}) catch {
             if (!args.quiet) {
                 std.log.err("failed to copy {s}/{s} to {s}/{s}", .{
                     env.backup_path,
