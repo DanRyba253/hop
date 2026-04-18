@@ -9,7 +9,7 @@ const openDirAbsolute = std.Io.Dir.openDirAbsolute;
 const resolve = std.fs.path.resolvePosix;
 const isAbsolute = std.fs.path.isAbsolute;
 const startsWith = std.mem.startsWith;
-const cwd = std.Io.Dir.cwd();
+const currentPath = std.process.currentPath;
 
 home: Dir = undefined,
 backup: Dir = undefined,
@@ -42,7 +42,7 @@ pub fn build(
     };
 
     var buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
-    const cwd_path_len = cwd.realPathFile(env.io, ".", &buf) catch |e| {
+    const cwd_path_len = currentPath(env.io, &buf) catch |e| {
         std.debug.print("{}\n", .{e});
         try errHandler(args, .failed_to_find_realpath_of_cwd);
         @panic("Env.build: errHandler expected to error here");
@@ -157,9 +157,9 @@ pub const Error = union(enum) {
 
 pub fn printDebug(self: @This()) !void {
     var buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
-    const home_len = try self.home.realPathFile(self.io, ".", &buf);
+    const home_len = try self.home.realPath(self.io, &buf);
     std.debug.print("home: {s}\n", .{buf[0..home_len]});
-    const backup_len = try self.backup.realPathFile(self.io, ".", &buf);
+    const backup_len = try self.backup.realPath(self.io, &buf);
     std.debug.print("backup: {s}\n", .{buf[0..backup_len]});
     std.debug.print("Paths:\n", .{});
     for (self.paths) |path| {
