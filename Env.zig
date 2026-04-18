@@ -106,12 +106,8 @@ pub fn build(
                 file,
             });
         }
-        if (!startsWith(u8, file_path, env.home_path)) {
+        if (!startsWithDir(file_path, env.home_path)) {
             try errHandler(args, .{ .file_not_in_home_dir = file_path });
-            continue;
-        }
-        if (startsWith(u8, file_path, env.backup_path)) {
-            try errHandler(args, .{ .file_in_backup_dir = file_path });
             continue;
         }
         const stat = env.home.statFile(env.io, file_path, .{
@@ -124,7 +120,7 @@ pub fn build(
             try errHandler(args, .{ .file_not_a_file = file_path });
             continue;
         }
-        try files.append(arena, file_path[env.home_path.len + 1 ..]);
+        try files.append(arena, file_path);
     }
 
     env.paths = try files.toOwnedSlice(arena);
@@ -150,7 +146,6 @@ pub const Error = union(enum) {
     failed_to_open_backup_dir_env_var: []const u8,
     failed_to_open_backup_dir_default: []const u8,
     file_not_in_home_dir: []const u8,
-    file_in_backup_dir: []const u8,
     failed_to_stat_file: []const u8,
     file_not_a_file: []const u8,
 };
@@ -201,10 +196,6 @@ pub fn defaultErrorHandler(args: Args, err: Error) error{StoppedByErrHandler}!vo
             if (!args.quiet) std.log.err("failed to access file: {s}", .{file});
             return;
         },
-        .file_in_backup_dir => |file| {
-            if (!args.quiet) std.log.err("skipping file in backup dir: {s}", .{file});
-            return;
-        },
         .file_not_a_file => |file| {
             if (!args.quiet) std.log.err("skipping non-file: {s}", .{file});
             return;
@@ -214,4 +205,9 @@ pub fn defaultErrorHandler(args: Args, err: Error) error{StoppedByErrHandler}!vo
             std.process.exit(1);
         },
     }
+}
+
+pub fn startsWithDir(path: []const u8, dir: []const u8) bool {
+    if (!startsWith(u8, path, dir)) return false;
+    return path[dir.len] == '/';
 }

@@ -12,8 +12,7 @@ const bold = "\x1b[1m";
 const reset = "\x1b[0m";
 
 pub fn run(arena: Allocator, args: Args, env: *Env) !void {
-    var walker: Walker = try .walk(arena, env);
-    defer walker.deinit();
+    var walker: Walker = try .walkBackup(arena, env);
 
     if (!args.simple) {
         try env.stdout.print(bold ++ "STATUS       FILE" ++ reset ++ "\n", .{});

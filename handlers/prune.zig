@@ -5,8 +5,10 @@ const Walker = @import("../Walker.zig");
 const Allocator = std.mem.Allocator;
 
 pub fn run(arena: Allocator, args: Arg, env: *Env) !void {
-    var walker: Walker = try .walk(arena, env);
-    defer walker.deinit();
+    var walker: Walker = if (args.file_paths.len == 0)
+        try Walker.walkBackup(arena, env)
+    else
+        Walker.walkPaths(env);
 
     walk: while (walker.next()) |path| {
         if (env.home.statFile(env.io, path, .{ .follow_symlinks = false })) |stat| {

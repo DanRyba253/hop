@@ -45,19 +45,30 @@ pub fn main(init: std.process.Init) !void {
             \\COMMANDS
             \\  add [files]
             \\      Add files to the backup directory
-            \\  sync
-            \\      Sync backup files
-            \\      Except for files in 'ignore' directories and .git
-            \\  install
-            \\      Install backup files into $HOME
-            \\      Except for files in 'ignore' directories and .git
+            \\  sync [files]
+            \\      Without files:
+            \\          Sync all backup files
+            \\          Except for files in 'ignore' directories and .git
+            \\      With files:
+            \\          Sync only the specified files
+            \\          Both actual files and their copies in the backup directory can be specified
+            \\  install [files]
+            \\      Without files:
+            \\          Install all backup files into $HOME
+            \\          Except for files in 'ignore' directories and .git
+            \\      With files:
+            \\          Install only the specified files
+            \\          Both actual files and their copies in the backup directory can be specified
             \\  ls
             \\      Print information about the backup files
             \\  dir
             \\      Print the backup directory
-            \\  prune
-            \\      Remove backup files that do not correspond to any file in $HOME
-            \\      and any directories that become empty as a result
+            \\  prune [files]
+            \\      Without files:
+            \\          Remove all backup files that do not correspond to any file in $HOME
+            \\          and any directories that become empty as a result
+            \\      With files:
+            \\          Remove only the backup files that are specified
             \\SPECIAL USAGE
             \\  hop (with no arguments)
             \\      Equivalent to 'hop sync -v'
