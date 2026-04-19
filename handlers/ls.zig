@@ -19,6 +19,7 @@ pub fn run(arena: Allocator, args: Args, env: *Env) !void {
     }
     while (walker.next()) |path| {
         const status, const color, const ok = blk: {
+            if (args.simple) break :blk .{ "", green, true };
             if (compare_files.compare(env, path)) |ok| {
                 if (ok) {
                     if (args.diff) continue;
