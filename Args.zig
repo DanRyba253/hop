@@ -23,67 +23,73 @@ pub fn parse(
 ) (error{StoppedByErrHandler} || Allocator.Error)!@This() {
     var expecting_backup_dir = false;
     var got_command = false;
+    var end_of_options_seen = false;
     var parsed: @This() = .{};
     var files: List([]const u8) = .empty;
 
     for (args) |arg| {
-        if (isLongOption(arg)) |option_str| {
-            if (expecting_backup_dir) {
-                try errHandler(.no_value_after_backup_dir_option);
-                expecting_backup_dir = false;
+        options: {
+            if (end_of_options_seen) break :options;
+
+            if (isLongOption(arg)) |option_str| {
+                if (expecting_backup_dir) {
+                    try errHandler(.no_value_after_backup_dir_option);
+                    expecting_backup_dir = false;
+                }
+                if (isKnownLongOption(option_str)) |option| {
+                    switch (option) {
+                        .backup_dir => expecting_backup_dir = true,
+                        .help => parsed.help = true,
+                        .quiet => parsed.quiet = true,
+                        .force => parsed.force = true,
+                        .realpath => parsed.realpath = true,
+                        .verbose => parsed.verbose = true,
+                        .simple => parsed.simple = true,
+                        .diff => parsed.diff = true,
+                        .no_color => parsed.no_color = true,
+                        .end_of_options => end_of_options_seen = true,
+                    }
+                    continue;
+                }
+                try errHandler(.{ .unknown_long_option = option_str });
+                continue;
             }
-            if (isKnownLongOption(option_str)) |option| {
-                switch (option) {
-                    .backup_dir => expecting_backup_dir = true,
-                    .help => parsed.help = true,
-                    .quiet => parsed.quiet = true,
-                    .force => parsed.force = true,
-                    .realpath => parsed.realpath = true,
-                    .verbose => parsed.verbose = true,
-                    .simple => parsed.simple = true,
-                    .diff => parsed.diff = true,
-                    .no_color => parsed.no_color = true,
+
+            if (isFlags(arg)) |flags_str| {
+                if (expecting_backup_dir) {
+                    try errHandler(.no_value_after_backup_dir_option);
+                    expecting_backup_dir = false;
+                }
+                for (flags_str) |flag_char| {
+                    switch (flag_char) {
+                        'h' => parsed.help = true,
+                        'q' => parsed.quiet = true,
+                        'f' => parsed.force = true,
+                        'r' => parsed.realpath = true,
+                        'v' => parsed.verbose = true,
+                        's' => parsed.simple = true,
+                        'd' => parsed.diff = true,
+                        'n' => parsed.no_color = true,
+                        else => try errHandler(.{ .unknown_flag = flag_char }),
+                    }
                 }
                 continue;
             }
-            try errHandler(.{ .unknown_long_option = option_str });
-            continue;
-        }
 
-        if (isFlags(arg)) |flags_str| {
             if (expecting_backup_dir) {
-                try errHandler(.no_value_after_backup_dir_option);
+                parsed.backup_dir = arg;
                 expecting_backup_dir = false;
-            }
-            for (flags_str) |flag_char| {
-                switch (flag_char) {
-                    'h' => parsed.help = true,
-                    'q' => parsed.quiet = true,
-                    'f' => parsed.force = true,
-                    'r' => parsed.realpath = true,
-                    'v' => parsed.verbose = true,
-                    's' => parsed.simple = true,
-                    'd' => parsed.diff = true,
-                    'n' => parsed.no_color = true,
-                    else => try errHandler(.{ .unknown_flag = flag_char }),
-                }
-            }
-            continue;
-        }
-
-        if (expecting_backup_dir) {
-            parsed.backup_dir = arg;
-            expecting_backup_dir = false;
-            continue;
-        }
-
-        if (!got_command) {
-            if (isKnownCommand(arg)) |command| {
-                parsed.command = command;
-                got_command = true;
                 continue;
             }
-            try errHandler(.{ .unknown_command = arg });
+
+            if (!got_command) {
+                if (isKnownCommand(arg)) |command| {
+                    parsed.command = command;
+                    got_command = true;
+                    continue;
+                }
+                try errHandler(.{ .unknown_command = arg });
+            }
         }
 
         try files.append(arena, arg);
@@ -126,6 +132,7 @@ pub const KnownLongOption = enum {
     simple,
     diff,
     no_color,
+    end_of_options,
 };
 
 fn isLongOption(arg: []const u8) ?[]const u8 {
@@ -136,6 +143,7 @@ fn isLongOption(arg: []const u8) ?[]const u8 {
 }
 
 fn isKnownLongOption(option_str: []const u8) ?KnownLongOption {
+    if (eql(u8, option_str, "")) return .end_of_options;
     if (eql(u8, option_str, "backup-dir")) return .backup_dir;
     if (eql(u8, option_str, "help")) return .help;
     if (eql(u8, option_str, "quiet")) return .quiet;
