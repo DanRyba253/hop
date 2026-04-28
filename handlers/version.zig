@@ -3,7 +3,7 @@ const Args = @import("../Args.zig");
 const Env = @import("../Env.zig");
 const Allocator = std.mem.Allocator;
 
-const hop_version = "0.0.8-dev";
+const hop_version = "0.0.8";
 
 pub fn run(_: Allocator, _: Args, env: *Env) !void {
     try env.stdout.print("{s}\n", .{hop_version});
