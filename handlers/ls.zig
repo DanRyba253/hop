@@ -67,15 +67,16 @@ pub fn run(arena: Allocator, args: Args, env: *Env) !void {
         if (args.diff and !args.simple and out_of_sync) {
             var cmd_buf: [std.fs.max_path_bytes * 3 + 8]u8 = undefined;
             var cmd_writer = std.Io.Writer.fixed(&cmd_buf);
-            try cmd_writer.print("{s} {s}/{s} {s}/{s}\nexit\n", .{
+            try cmd_writer.print("{s} {s}/{s} {s}/{s}", .{
                 env.diff_cmd,
                 env.home_path,
                 path,
                 env.backup_path,
                 path,
             });
+            const cmd_len = env.diff_cmd.len + env.home_path.len + env.backup_path.len + 2 * path.len + 4;
             const result = try std.process.run(arena, env.io, .{
-                .argv = &.{ "sh", "-c", &cmd_buf },
+                .argv = &.{ "sh", "-c", cmd_buf[0..cmd_len] },
             });
             try env.stdout.writeAll(result.stdout);
             if (result.stderr.len > 0 and !args.quiet) {

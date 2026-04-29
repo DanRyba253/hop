@@ -106,7 +106,11 @@ pub fn build(
             env.diff_cmd = diff_cmd_env;
             break :resolve_diff_cmd;
         }
-        env.diff_cmd = "diff -u";
+        if (args.no_color) {
+            env.diff_cmd = "diff -u --color=never";
+        } else {
+            env.diff_cmd = "diff -u --color=always";
+        }
     }
 
     var files: List([]const u8) = .empty;
