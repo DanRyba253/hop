@@ -78,7 +78,7 @@ pub fn run(arena: Allocator, args: Args, env: *Env) !void {
                 .argv = &.{ "sh", "-c", &cmd_buf },
             });
             try env.stdout.writeAll(result.stdout);
-            if (result.stderr.len > 0) {
+            if (result.stderr.len > 0 and !args.quiet) {
                 try env.stdout.flush();
                 std.log.err("{s}", .{result.stderr});
             }
