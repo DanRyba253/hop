@@ -54,7 +54,7 @@ pub fn build(
         if (args.backup_dir) |backup_dir_opt| blk: {
             var backup_path_opt: []const u8 = undefined;
             if (isAbsolute(backup_dir_opt)) {
-                backup_path_opt = backup_dir_opt;
+                backup_path_opt = try resolve(arena, &.{backup_dir_opt});
             } else {
                 backup_path_opt = try resolve(arena, &.{
                     cwd_path,
@@ -70,12 +70,13 @@ pub fn build(
         }
 
         blk: {
-            const backup_path_env = envMap.get("HOP_BACKUP") orelse break :blk;
+            const backup_dir_env = envMap.get("HOP_BACKUP") orelse break :blk;
 
-            if (!isAbsolute(backup_path_env)) {
-                try errHandler(args, .{ .backup_dir_env_var_is_not_absolute = backup_path_env });
+            if (!isAbsolute(backup_dir_env)) {
+                try errHandler(args, .{ .backup_dir_env_var_is_not_absolute = backup_dir_env });
                 break :blk;
             }
+            const backup_path_env = try resolve(arena, &.{backup_dir_env});
             env.backup = openDirAbsolute(env.io, backup_path_env, .{ .iterate = true }) catch {
                 try errHandler(args, .{ .failed_to_open_backup_dir_env_var = backup_path_env });
                 break :blk;
