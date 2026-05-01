@@ -16,8 +16,6 @@ USAGE:
 OPTIONS:
   --backup-dir <dir>     Use <dir> as the backup directory
                          Default: $HOP_BACKUP or $HOME/.hop
-  --diff-cmd <command>   Command to use with the '-d' option
-                         Default: $HOP_DIFF_CMD or 'diff -u'
 
   -v, --verbose          Show messages for added, synced, or installed files
   -q, --quiet            Suppress messages and errors (overrides --verbose)
