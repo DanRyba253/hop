@@ -16,7 +16,6 @@ backup: Dir = undefined,
 home_path: []const u8 = undefined,
 backup_path: []const u8 = undefined,
 paths: [][]const u8 = &.{},
-diff_cmd: []const u8 = undefined,
 stdin_buf: [1024]u8 = undefined,
 stdin_reader: std.Io.File.Reader = undefined,
 stdin: *std.Io.Reader = undefined,
@@ -94,23 +93,6 @@ pub fn build(
             @panic("Env.build: errHandler expected to error here");
         };
         env.backup_path = backup_path_default;
-    }
-
-    resolve_diff_cmd: {
-        if (args.diff_cmd) |diff_cmd_opt| {
-            env.diff_cmd = diff_cmd_opt;
-            break :resolve_diff_cmd;
-        }
-        blk: {
-            const diff_cmd_env = envMap.get("HOP_DIFF_CMD") orelse break :blk;
-            env.diff_cmd = diff_cmd_env;
-            break :resolve_diff_cmd;
-        }
-        if (args.no_color) {
-            env.diff_cmd = "diff -u --color=never";
-        } else {
-            env.diff_cmd = "diff -u --color=always";
-        }
     }
 
     var files: List([]const u8) = .empty;

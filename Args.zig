@@ -5,7 +5,6 @@ const startsWith = std.mem.startsWith;
 const eql = std.mem.eql;
 
 backup_dir: ?[]const u8 = null,
-diff_cmd: ?[]const u8 = null,
 help: bool = false,
 quiet: bool = false,
 force: bool = false,
@@ -46,7 +45,6 @@ pub fn parse(
                 if (isKnownLongOption(option_str)) |option| {
                     switch (option) {
                         .backup_dir => option_waiting_for_value = .backup_dir,
-                        .diff_cmd => option_waiting_for_value = .diff_cmd,
                         .help => parsed.help = true,
                         .quiet => parsed.quiet = true,
                         .force => parsed.force = true,
@@ -94,7 +92,6 @@ pub fn parse(
             if (option_waiting_for_value) |waiting_option| {
                 switch (waiting_option) {
                     .backup_dir => parsed.backup_dir = arg,
-                    .diff_cmd => parsed.diff_cmd = arg,
                     else => unreachable, // other known options don't wait for a value
                 }
                 option_waiting_for_value = null;
@@ -159,7 +156,6 @@ pub const Error = union(enum) {
 
 pub const KnownLongOption = enum {
     backup_dir,
-    diff_cmd,
     help,
     quiet,
     force,
@@ -182,7 +178,6 @@ fn isLongOption(arg: []const u8) ?[]const u8 {
 fn isKnownLongOption(option_str: []const u8) ?KnownLongOption {
     if (eql(u8, option_str, "")) return .end_of_options;
     if (eql(u8, option_str, "backup-dir")) return .backup_dir;
-    if (eql(u8, option_str, "diff-cmd")) return .diff_cmd;
     if (eql(u8, option_str, "help")) return .help;
     if (eql(u8, option_str, "quiet")) return .quiet;
     if (eql(u8, option_str, "force")) return .force;
@@ -216,7 +211,6 @@ pub fn printDebug(args: @This()) void {
     std.debug.print(
         \\Args:
         \\  backup_dir: {?s},
-        \\  diff_cmd: {?s},
         \\  help: {},
         \\  quiet: {},
         \\  force: {},
@@ -230,7 +224,6 @@ pub fn printDebug(args: @This()) void {
         \\
     , .{
         args.backup_dir,
-        args.diff_cmd,
         args.help,
         args.quiet,
         args.force,
@@ -254,7 +247,6 @@ pub fn defaultErrorHandler(err: Error) error{StoppedByErrHandler}!void {
         .no_value_after_option => |err_data| {
             const option_str = switch (err_data.waiting_option) {
                 .backup_dir => "--backup-dir",
-                .diff_cmd => "--diff-cmd",
                 else => unreachable, // other known options don't wait for a value
             };
             const got = if (err_data.got.len > 0) err_data.got else "End of options";

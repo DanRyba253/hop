@@ -65,19 +65,29 @@ pub fn run(arena: Allocator, args: Args, env: *Env) !void {
             try env.stdout.print("{s}/{s}\n", .{ env.backup_path, path });
         }
         if (args.diff and !args.simple and out_of_sync) {
-            var cmd_buf: [std.fs.max_path_bytes * 3 + 8]u8 = undefined;
-            var cmd_writer = std.Io.Writer.fixed(&cmd_buf);
-            try cmd_writer.print("{s} {s}/{s} {s}/{s}", .{
-                env.diff_cmd,
-                env.home_path,
-                path,
-                env.backup_path,
-                path,
-            });
-            const cmd_len = env.diff_cmd.len + env.home_path.len + env.backup_path.len + 2 * path.len + 4;
-            const result = try std.process.run(arena, env.io, .{
-                .argv = &.{ "sh", "-c", cmd_buf[0..cmd_len] },
-            });
+            var home_file_buf: [std.fs.max_path_bytes]u8 = undefined;
+            var backup_file_buf: [std.fs.max_path_bytes]u8 = undefined;
+
+            var home_file_writer = std.Io.Writer.fixed(&home_file_buf);
+            var backup_file_writer = std.Io.Writer.fixed(&backup_file_buf);
+
+            try home_file_writer.print("{s}/{s}", .{ env.home_path, path });
+            try backup_file_writer.print("{s}/{s}", .{ env.backup_path, path });
+
+            const home_file_path = home_file_buf[0 .. env.home_path.len + 1 + path.len];
+            const backup_file_path = backup_file_buf[0 .. env.backup_path.len + 1 + path.len];
+
+            const diff_argv: []const []const u8 = if (args.no_color)
+                &.{ "diff", "--color=never", backup_file_path, home_file_path }
+            else
+                &.{ "diff", "--color=always", backup_file_path, home_file_path };
+
+            const result = std.process.run(arena, env.io, .{
+                .argv = diff_argv,
+            }) catch |e| {
+                std.debug.print("oops: {}\n", .{e});
+                return;
+            };
             try env.stdout.writeAll(result.stdout);
             if (result.stderr.len > 0 and !args.quiet) {
                 try env.stdout.flush();
