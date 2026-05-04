@@ -249,7 +249,7 @@ pub fn defaultErrorHandler(err: Error) error{StoppedByErrHandler}!void {
                 .backup_dir => "--backup-dir",
                 else => unreachable, // other known options don't wait for a value
             };
-            const got = if (err_data.got.len > 0) err_data.got else "End of options";
+            const got = if (err_data.got.len > 0) err_data.got else "End of arguments";
             std.log.err("missing value after '{s}'. Got: '{s}'", .{
                 option_str,
                 got,
